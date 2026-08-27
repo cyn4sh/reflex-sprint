@@ -1,16 +1,12 @@
 import uuid
-
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, MethodNotAllowed
 from rest_framework.response import Response
-
-from .models import Delivery
-from .serializers import (
-    DeliveryWriteSerializer,
-    DeliveryReadSerializer,
-    DeliveryAssignSerializer,
-    DeliveryStatusOverrideSerializer,
+from deliveries.models import Delivery
+from deliveries.serializers import (
+    DeliveryWriteSerializer, DeliveryReadSerializer,
+    DeliveryAssignSerializer, DeliveryStatusOverrideSerializer,
 )
 
 
@@ -22,6 +18,11 @@ class IsRetailer(permissions.BasePermission):
 class IsDispatcher(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == 'dispatcher'
+
+
+class IsRider(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'rider'
 
 
 class RetailerDeliveryViewSet(viewsets.ModelViewSet):
@@ -98,5 +99,40 @@ class DispatcherDeliveryViewSet(viewsets.ModelViewSet):
         if delivery.status == Delivery.Status.DELIVERED:
             raise PermissionDenied("Cannot cancel a delivery that has already been delivered.")
         delivery.status = Delivery.Status.CANCELLED
+        delivery.save()
+        return Response(DeliveryReadSerializer(delivery).data)
+
+
+class RiderDeliveryViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsRider]
+    http_method_names = ['get', 'post']
+
+    def get_queryset(self):
+        return Delivery.objects.filter(rider=self.request.user)
+
+    def get_serializer_class(self):
+        return DeliveryReadSerializer
+
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed('POST', detail="Riders cannot create deliveries.")
+
+    @action(detail=True, methods=['post'])
+    def pick_up(self, request, pk=None):
+        delivery = self.get_object()
+        if delivery.status != Delivery.Status.ASSIGNED:
+            raise PermissionDenied("Can only mark as Picked Up from Assigned status.")
+        delivery.status = Delivery.Status.PICKED_UP
+        delivery.save()
+        return Response(DeliveryReadSerializer(delivery).data)
+
+    @action(detail=True, methods=['post'])
+    def confirm(self, request, pk=None):
+        delivery = self.get_object()
+        if delivery.is_confirmed:
+            raise PermissionDenied("This delivery has already been confirmed.")
+        if delivery.status != Delivery.Status.PICKED_UP:
+            raise PermissionDenied("Can only confirm a delivery that has been picked up.")
+        delivery.status = Delivery.Status.DELIVERED
+        delivery.is_confirmed = True
         delivery.save()
         return Response(DeliveryReadSerializer(delivery).data)
