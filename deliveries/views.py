@@ -2,11 +2,16 @@ import uuid
 
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, MethodNotAllowed
 from rest_framework.response import Response
 
 from .models import Delivery
-from .serializers import DeliveryWriteSerializer, DeliveryReadSerializer
+from .serializers import (
+    DeliveryWriteSerializer,
+    DeliveryReadSerializer,
+    DeliveryAssignSerializer,
+    DeliveryStatusOverrideSerializer,
+)
 
 
 class IsRetailer(permissions.BasePermission):
@@ -14,9 +19,14 @@ class IsRetailer(permissions.BasePermission):
         return request.user.is_authenticated and request.user.role == 'retailer'
 
 
+class IsDispatcher(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'dispatcher'
+
+
 class RetailerDeliveryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsRetailer]
-    http_method_names = ['get', 'post', 'patch']  # no PUT, no DELETE — matches "no persona can delete"
+    http_method_names = ['get', 'post', 'patch']
 
     def get_queryset(self):
         return Delivery.objects.filter(retailer=self.request.user)
@@ -42,6 +52,51 @@ class RetailerDeliveryViewSet(viewsets.ModelViewSet):
         delivery = self.get_object()
         if delivery.status != Delivery.Status.PENDING:
             raise PermissionDenied("Cannot cancel a request after it has been assigned.")
+        delivery.status = Delivery.Status.CANCELLED
+        delivery.save()
+        return Response(DeliveryReadSerializer(delivery).data)
+
+
+class DispatcherDeliveryViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsDispatcher]
+    http_method_names = ['get', 'post']
+
+    def get_queryset(self):
+        queryset = Delivery.objects.all()
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        return queryset
+
+    def get_serializer_class(self):
+        return DeliveryReadSerializer
+
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed('POST', detail="Dispatchers cannot create deliveries.")
+
+    @action(detail=True, methods=['post'])
+    def assign(self, request, pk=None):
+        delivery = self.get_object()
+        if delivery.status == Delivery.Status.DELIVERED:
+            raise PermissionDenied("Cannot assign a delivery that has already been delivered.")
+        serializer = DeliveryAssignSerializer(delivery, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(status=Delivery.Status.ASSIGNED)
+        return Response(DeliveryReadSerializer(delivery).data)
+
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        delivery = self.get_object()
+        serializer = DeliveryStatusOverrideSerializer(delivery, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(DeliveryReadSerializer(delivery).data)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        delivery = self.get_object()
+        if delivery.status == Delivery.Status.DELIVERED:
+            raise PermissionDenied("Cannot cancel a delivery that has already been delivered.")
         delivery.status = Delivery.Status.CANCELLED
         delivery.save()
         return Response(DeliveryReadSerializer(delivery).data)

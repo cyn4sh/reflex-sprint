@@ -17,3 +17,15 @@ class DeliveryReadSerializer(serializers.ModelSerializer):
             'retailer', 'rider', 'created_at', 'updated_at',
         ]
         read_only_fields = fields
+
+
+class DeliveryAssignSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Delivery
+        fields = ['rider']
+
+
+class DeliveryStatusOverrideSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Delivery
+        fields = ['status']
