@@ -3,8 +3,8 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, MethodNotAllowed
 from rest_framework.response import Response
-from deliveries.models import Delivery
-from deliveries.serializers import (
+from .models import Delivery
+from .serializers import (
     DeliveryWriteSerializer, DeliveryReadSerializer,
     DeliveryAssignSerializer, DeliveryStatusOverrideSerializer,
 )
@@ -128,6 +128,9 @@ class RiderDeliveryViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         delivery = self.get_object()
+        scanned_code = request.data.get('confirmation_code')
+        if scanned_code != delivery.confirmation_code:
+            raise PermissionDenied("Scanned code does not match this delivery.")
         if delivery.is_confirmed:
             raise PermissionDenied("This delivery has already been confirmed.")
         if delivery.status != Delivery.Status.PICKED_UP:
