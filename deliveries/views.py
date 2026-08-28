@@ -1,4 +1,5 @@
 import uuid
+from django.db import transaction
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, MethodNotAllowed
@@ -77,12 +78,13 @@ class DispatcherDeliveryViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def assign(self, request, pk=None):
-        delivery = self.get_object()
-        if delivery.status == Delivery.Status.DELIVERED:
-            raise PermissionDenied("Cannot assign a delivery that has already been delivered.")
-        serializer = DeliveryAssignSerializer(delivery, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(status=Delivery.Status.ASSIGNED)
+        with transaction.atomic():
+            delivery = Delivery.objects.select_for_update().get(pk=pk)
+            if delivery.status != Delivery.Status.PENDING:
+                raise PermissionDenied("This delivery is no longer available for assignment.")
+            serializer = DeliveryAssignSerializer(delivery, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(status=Delivery.Status.ASSIGNED)
         return Response(DeliveryReadSerializer(delivery).data)
 
     @action(detail=True, methods=['post'])
