@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
 from accounts.models import User
-from accounts.serializers import UserListSerializer
+from accounts.serializers import UserListSerializer, CurrentUserSerializer
 
 
 class IsDispatcher(permissions.BasePermission):
@@ -18,3 +18,11 @@ class UserListView(generics.ListAPIView):
         if role_param:
             queryset = queryset.filter(role=role_param)
         return queryset
+
+
+class CurrentUserView(generics.RetrieveAPIView):
+    serializer_class = CurrentUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

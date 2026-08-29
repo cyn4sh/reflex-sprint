@@ -6,3 +6,10 @@ class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username']
+
+
+class CurrentUserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ["id", "username", "role"]
