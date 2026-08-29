@@ -1,7 +1,7 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
+import { createDelivery } from "../../services/deliveries";
 
 function CreateDelivery() {
   const navigate = useNavigate();
@@ -30,14 +30,7 @@ function CreateDelivery() {
     setLoading(true);
 
     try {
-      /*
-       * API connection will be added after
-       * the frontend form is confirmed working.
-       */
-
-      console.log("Delivery submitted:", formData);
-
-      // Temporary success behaviour
+      await createDelivery(formData);
       navigate("/retailer/dashboard");
     } catch (error) {
       console.error("Create delivery error:", error);
@@ -228,4 +221,3 @@ function CreateDelivery() {
 }
 
 export default CreateDelivery;
-

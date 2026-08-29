@@ -1,57 +1,42 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../../components/Layout";
 import StatusBadge from "../../components/StatusBadge";
+import { getDeliveries } from "../../services/deliveries";
 
 function RetailerDashboard() {
+  const [deliveries, setDeliveries] = useState([]);
+
+  useEffect(() => {
+    getDeliveries().then(setDeliveries);
+  }, []);
+
   const stats = [
     {
       label: "Total Deliveries",
-      value: "24",
+      value: deliveries.length,
       description: "All requests",
     },
     {
       label: "Pending",
-      value: "5",
+      value: deliveries.filter((d) => d.status === "pending").length,
       description: "Awaiting assignment",
     },
     {
       label: "In Transit",
-      value: "8",
+      value: deliveries.filter((d) =>
+        ["assigned", "picked_up"].includes(d.status)
+      ).length,
       description: "Currently moving",
     },
     {
       label: "Delivered",
-      value: "11",
+      value: deliveries.filter((d) => d.status === "delivered").length,
       description: "Successfully completed",
     },
   ];
 
-  const recentDeliveries = [
-    {
-      id: 1024,
-      customer_name: "Ali Hassan",
-      customer_phone: "0712 345 678",
-      customer_address: "Kilifi Town",
-      item_description: "Samsung TV",
-      status: "picked_up",
-    },
-    {
-      id: 1023,
-      customer_name: "Fatuma Said",
-      customer_phone: "0701 222 333",
-      customer_address: "Mtwapa",
-      item_description: "Pharmacy supplies",
-      status: "assigned",
-    },
-    {
-      id: 1022,
-      customer_name: "Mohamed Salim",
-      customer_phone: "0722 111 444",
-      customer_address: "Bamburi",
-      item_description: "Laptop accessories",
-      status: "delivered",
-    },
-  ];
+  const recentDeliveries = deliveries.slice(0, 3);
 
   return (
     <Layout role="retailer">

@@ -11,7 +11,11 @@ export const loginUser = async (username, password) => {
   localStorage.setItem("access_token", access);
   localStorage.setItem("refresh_token", refresh);
 
-  return response.data;
+  // Fetch the real logged-in user (includes role)
+  const userResponse = await api.get("/users/me/");
+  localStorage.setItem("user", JSON.stringify(userResponse.data));
+
+  return { ...response.data, user: userResponse.data };
 };
 
 export const refreshAccessToken = async () => {

@@ -1,30 +1,14 @@
+import { useState, useEffect } from "react";
 import Layout from "../../components/Layout";
 import StatusBadge from "../../components/StatusBadge";
+import { getDispatcherDeliveries } from "../../services/deliveries";
 
 function Deliveries() {
-  const deliveries = [
-    {
-      id: 1030,
-      customer: "Fatuma Said",
-      location: "Mtwapa",
-      rider: "Ahmed Hassan",
-      status: "assigned",
-    },
-    {
-      id: 1031,
-      customer: "Hassan Omar",
-      location: "Mombasa CBD",
-      rider: "Mohamed Ali",
-      status: "picked_up",
-    },
-    {
-      id: 1032,
-      customer: "Amina Hassan",
-      location: "Kilifi Town",
-      rider: "Not assigned",
-      status: "pending",
-    },
-  ];
+  const [deliveries, setDeliveries] = useState([]);
+
+  useEffect(() => {
+    getDispatcherDeliveries().then(setDeliveries);
+  }, []);
 
   return (
     <Layout role="dispatcher">
@@ -83,15 +67,15 @@ function Deliveries() {
                     </td>
 
                     <td className="px-5 py-5 text-sm font-medium text-slate-700">
-                      {delivery.customer}
+                      {delivery.customer_name}
                     </td>
 
                     <td className="px-5 py-5 text-sm text-slate-500">
-                      {delivery.location}
+                      {delivery.customer_address}
                     </td>
 
                     <td className="px-5 py-5 text-sm text-slate-500">
-                      {delivery.rider}
+                      {delivery.rider ? `Rider #${delivery.rider}` : "Not assigned"}
                     </td>
 
                     <td className="px-5 py-5">

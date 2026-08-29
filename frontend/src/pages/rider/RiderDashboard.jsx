@@ -1,25 +1,45 @@
+import { useState, useEffect } from "react";
 import Layout from "../../components/Layout";
 import StatusBadge from "../../components/StatusBadge";
+import { getRiderDeliveries, pickUpDelivery, confirmDelivery } from "../../services/deliveries";
 
 function RiderDashboard() {
-  const deliveries = [
-    {
-      id: 1032,
-      customer_name: "Ali Hassan",
-      customer_phone: "0712 345 678",
-      customer_address: "Kilifi Town",
-      item_description: "Samsung TV",
-      status: "assigned",
-    },
-    {
-      id: 1033,
-      customer_name: "Fatuma Said",
-      customer_phone: "0701 222 333",
-      customer_address: "Mtwapa",
-      item_description: "Pharmacy supplies",
-      status: "picked_up",
-    },
-  ];
+  const [deliveries, setDeliveries] = useState([]);
+
+  const loadDeliveries = () => {
+    getRiderDeliveries().then(setDeliveries);
+  };
+
+  useEffect(() => {
+    loadDeliveries();
+  }, []);
+
+  const handlePickUp = async (id) => {
+    try {
+      await pickUpDelivery(id);
+      loadDeliveries();
+    } catch (error) {
+      console.error("Pick up error:", error);
+      alert(error.response?.data?.detail || "Unable to mark as picked up.");
+    }
+  };
+
+  const handleConfirm = async (id) => {
+    const code = prompt("Enter/scan the confirmation code:");
+    if (!code) return;
+
+    try {
+      await confirmDelivery(id, code);
+      loadDeliveries();
+    } catch (error) {
+      console.error("Confirm error:", error);
+      alert(error.response?.data?.detail || "Unable to confirm delivery.");
+    }
+  };
+
+  const assignedCount = deliveries.filter((d) => d.status === "assigned").length;
+  const pickedUpCount = deliveries.filter((d) => d.status === "picked_up").length;
+  const deliveredCount = deliveries.filter((d) => d.status === "delivered").length;
 
   return (
     <Layout role="rider">
@@ -46,7 +66,7 @@ function RiderDashboard() {
             </p>
 
             <p className="mt-2 text-3xl font-bold text-slate-900">
-              2
+              {assignedCount}
             </p>
           </div>
 
@@ -56,7 +76,7 @@ function RiderDashboard() {
             </p>
 
             <p className="mt-2 text-3xl font-bold text-slate-900">
-              1
+              {pickedUpCount}
             </p>
           </div>
 
@@ -66,7 +86,7 @@ function RiderDashboard() {
             </p>
 
             <p className="mt-2 text-3xl font-bold text-slate-900">
-              8
+              {deliveredCount}
             </p>
           </div>
         </div>
@@ -127,13 +147,19 @@ function RiderDashboard() {
 
                 <div className="flex flex-col gap-3 sm:flex-row">
                   {delivery.status === "assigned" && (
-                    <button className="flex-1 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                    <button
+                      onClick={() => handlePickUp(delivery.id)}
+                      className="flex-1 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                    >
                       Mark as Picked Up
                     </button>
                   )}
 
                   {delivery.status === "picked_up" && (
-                    <button className="flex-1 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                    <button
+                      onClick={() => handleConfirm(delivery.id)}
+                      className="flex-1 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                    >
                       Mark as Delivered
                     </button>
                   )}

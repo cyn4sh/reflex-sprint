@@ -1,59 +1,36 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../../components/Layout";
 import StatusBadge from "../../components/StatusBadge";
+import { getDispatcherDeliveries } from "../../services/deliveries";
 
 function DispatcherDashboard() {
+  const [requests, setRequests] = useState([]);
+
+  useEffect(() => {
+    getDispatcherDeliveries().then(setRequests);
+  }, []);
+
   const stats = [
     {
       label: "Open Requests",
-      value: "8",
+      value: requests.filter((r) => r.status === "pending").length,
       description: "Waiting for assignment",
     },
     {
       label: "Assigned",
-      value: "12",
+      value: requests.filter((r) => r.status === "assigned").length,
       description: "Currently assigned",
     },
     {
       label: "In Transit",
-      value: "7",
+      value: requests.filter((r) => r.status === "picked_up").length,
       description: "Riders on delivery",
     },
     {
-      label: "Delivered Today",
-      value: "19",
+      label: "Delivered",
+      value: requests.filter((r) => r.status === "delivered").length,
       description: "Completed deliveries",
-    },
-  ];
-
-  const requests = [
-    {
-      id: 1028,
-      customer_name: "Amina Hassan",
-      customer_address: "Kilifi Town",
-      item_description: "Smartphone",
-      status: "pending",
-    },
-    {
-      id: 1029,
-      customer_name: "Yusuf Ali",
-      customer_address: "Mtwapa",
-      item_description: "Hardware supplies",
-      status: "pending",
-    },
-    {
-      id: 1030,
-      customer_name: "Fatuma Said",
-      customer_address: "Bamburi",
-      item_description: "Medicine",
-      status: "assigned",
-    },
-    {
-      id: 1031,
-      customer_name: "Hassan Omar",
-      customer_address: "Mombasa CBD",
-      item_description: "Laptop",
-      status: "picked_up",
     },
   ];
 

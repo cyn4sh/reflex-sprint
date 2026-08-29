@@ -1,44 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../../components/Layout";
 import StatusBadge from "../../components/StatusBadge";
+import { getDeliveries } from "../../services/deliveries";
 
 function Deliveries() {
   const [filter, setFilter] = useState("all");
+  const [deliveries, setDeliveries] = useState([]);
 
-  const deliveries = [
-    {
-      id: 1024,
-      customer_name: "Ali Hassan",
-      customer_phone: "0712 345 678",
-      customer_address: "Kilifi Town",
-      item_description: "Samsung TV",
-      status: "picked_up",
-    },
-    {
-      id: 1023,
-      customer_name: "Fatuma Said",
-      customer_phone: "0701 222 333",
-      customer_address: "Mtwapa",
-      item_description: "Pharmacy supplies",
-      status: "assigned",
-    },
-    {
-      id: 1022,
-      customer_name: "Mohamed Salim",
-      customer_phone: "0722 111 444",
-      customer_address: "Bamburi",
-      item_description: "Laptop accessories",
-      status: "delivered",
-    },
-    {
-      id: 1021,
-      customer_name: "Asha Omar",
-      customer_phone: "0799 555 666",
-      customer_address: "Mombasa CBD",
-      item_description: "Printer",
-      status: "pending",
-    },
-  ];
+  useEffect(() => {
+    getDeliveries().then(setDeliveries);
+  }, []);
 
   const filteredDeliveries =
     filter === "all"

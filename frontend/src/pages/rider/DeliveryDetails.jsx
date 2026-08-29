@@ -1,18 +1,56 @@
-import { Link, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
 import StatusBadge from "../../components/StatusBadge";
+import { getDelivery, pickUpDelivery, confirmDelivery } from "../../services/deliveries";
 
 function DeliveryDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  const delivery = {
-    id,
-    customer_name: "Ali Hassan",
-    customer_phone: "0712 345 678",
-    customer_address: "Kilifi Town",
-    item_description: "Samsung TV",
-    status: "assigned",
+  const [delivery, setDelivery] = useState(null);
+  const [error, setError] = useState("");
+
+  const loadDelivery = () => {
+    getDelivery(id).then(setDelivery);
   };
+
+  useEffect(() => {
+    loadDelivery();
+  }, [id]);
+
+  const handlePickUp = async () => {
+    setError("");
+    try {
+      await pickUpDelivery(id);
+      loadDelivery();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Unable to mark as picked up.");
+    }
+  };
+
+  const handleConfirm = async () => {
+    setError("");
+    const code = prompt("Enter/scan the confirmation code:");
+    if (!code) return;
+
+    try {
+      await confirmDelivery(id, code);
+      loadDelivery();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Unable to confirm delivery.");
+    }
+  };
+
+  if (!delivery) {
+    return (
+      <Layout role="rider">
+        <div className="mx-auto max-w-3xl">
+          <p className="text-slate-500">Loading delivery...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout role="rider">
@@ -37,6 +75,17 @@ function DeliveryDetails() {
 
           <StatusBadge status={delivery.status} />
         </div>
+
+        {error && (
+          <div
+            role="alert"
+            className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+          >
+            <p className="text-sm font-medium text-red-700">
+              {error}
+            </p>
+          </div>
+        )}
 
         {/* Customer information */}
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -114,8 +163,8 @@ function DeliveryDetails() {
             </div>
 
             <div className="flex gap-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
-                2
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${delivery.status === "picked_up" || delivery.status === "delivered" ? "bg-emerald-100 text-emerald-700" : "bg-slate-900 text-white"}`}>
+                {delivery.status === "picked_up" || delivery.status === "delivered" ? "✓" : "2"}
               </div>
 
               <div>
@@ -130,12 +179,12 @@ function DeliveryDetails() {
             </div>
 
             <div className="flex gap-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                3
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${delivery.status === "delivered" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
+                {delivery.status === "delivered" ? "✓" : "3"}
               </div>
 
               <div>
-                <p className="font-semibold text-slate-400">
+                <p className={`font-semibold ${delivery.status === "delivered" ? "text-slate-800" : "text-slate-400"}`}>
                   Delivered
                 </p>
 
@@ -146,9 +195,23 @@ function DeliveryDetails() {
             </div>
           </div>
 
-          <button className="mt-8 w-full rounded-xl bg-slate-900 px-5 py-4 text-sm font-semibold text-white hover:bg-slate-800">
-            Mark as Picked Up
-          </button>
+          {delivery.status === "assigned" && (
+            <button
+              onClick={handlePickUp}
+              className="mt-8 w-full rounded-xl bg-slate-900 px-5 py-4 text-sm font-semibold text-white hover:bg-slate-800"
+            >
+              Mark as Picked Up
+            </button>
+          )}
+
+          {delivery.status === "picked_up" && (
+            <button
+              onClick={handleConfirm}
+              className="mt-8 w-full rounded-xl bg-emerald-600 px-5 py-4 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              Mark as Delivered
+            </button>
+          )}
         </div>
       </div>
     </Layout>

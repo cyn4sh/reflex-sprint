@@ -31,6 +31,7 @@ export function AuthProvider({ children }) {
     const data = await loginUser(username, password);
 
     setAccessToken(data.access);
+    setUser(data.user);
 
     return data;
   };

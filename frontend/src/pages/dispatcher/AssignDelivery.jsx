@@ -1,37 +1,32 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
+import { assignDelivery } from "../../services/deliveries";
+import { getRiders } from "../../services/users";
 
 function AssignDelivery() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [selectedRider, setSelectedRider] = useState("");
+  const [riders, setRiders] = useState([]);
+  const [error, setError] = useState("");
 
-  const riders = [
-    {
-      id: 1,
-      name: "Ahmed Hassan",
-      status: "Available",
-    },
-    {
-      id: 2,
-      name: "Mohamed Ali",
-      status: "Available",
-    },
-    {
-      id: 3,
-      name: "Yusuf Omar",
-      status: "On Delivery",
-    },
-  ];
+  useEffect(() => {
+    getRiders().then(setRiders);
+  }, []);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setError("");
 
-    console.log("Assign delivery:", {
-      deliveryId: id,
-      rider: selectedRider,
-    });
+    try {
+      await assignDelivery(id, selectedRider);
+      navigate("/dispatcher/dashboard");
+    } catch (err) {
+      console.error("Assign delivery error:", err);
+      setError(err.response?.data?.detail || "Unable to assign rider.");
+    }
   };
 
   return (
@@ -62,6 +57,17 @@ function AssignDelivery() {
           onSubmit={handleSubmit}
           className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
         >
+          {error && (
+            <div
+              role="alert"
+              className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+            >
+              <p className="text-sm font-medium text-red-700">
+                {error}
+              </p>
+            </div>
+          )}
+
           <label
             htmlFor="rider"
             className="mb-2 block text-sm font-semibold text-slate-700"
@@ -79,12 +85,8 @@ function AssignDelivery() {
             <option value="">Choose a rider</option>
 
             {riders.map((rider) => (
-              <option
-                key={rider.id}
-                value={rider.id}
-                disabled={rider.status !== "Available"}
-              >
-                {rider.name} — {rider.status}
+              <option key={rider.id} value={rider.id}>
+                {rider.username}
               </option>
             ))}
           </select>
