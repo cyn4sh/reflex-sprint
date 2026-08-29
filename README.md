@@ -24,7 +24,7 @@ Full product and technical design documentation: [`docs/reflex-design.md`](docs/
 ## Tech Stack
 
 - **Backend:** Django, Django REST Framework, PostgreSQL, JWT authentication (`djangorestframework-simplejwt`)
-- **Frontend:** React (functional components + Hooks), Tailwind CSS, TanStack Query
+- **Frontend:** React (functional components + Hooks), Vite, Tailwind CSS
 - **API Docs:** drf-spectacular (Swagger UI at `/api/docs/`)
 
 ## Project Structure
@@ -34,6 +34,7 @@ reflex-sprint/
 ├── config/            # Django project settings & root URL config
 ├── accounts/          # Custom User model, role field, auth
 ├── deliveries/        # Delivery model, business logic, API endpoints
+├── frontend/          # React (Vite) frontend
 ├── diagrams/          # ERD, state machine, design-flow diagrams (Mermaid)
 ├── evidence/          # Screenshots proving technical experiments
 ├── docs/              # Full design documentation
@@ -41,6 +42,8 @@ reflex-sprint/
 ```
 
 ## Getting Started
+
+### Backend Setup
 
 ```bash
 # Clone and enter the project
@@ -70,6 +73,26 @@ python manage.py runserver
 
 API will be available at `http://127.0.0.1:8000/api/`, with live Swagger docs at `http://127.0.0.1:8000/api/docs/`.
 
+### Frontend Setup
+
+```bash
+# From the project root, move into the frontend folder
+cd frontend
+
+# Install dependencies
+npm install
+
+# Configure environment variables
+cp .env.example .env            # then fill in your own values
+
+# Start the dev server
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`. Make sure the backend server (above) is running at the same time — the frontend calls it directly for all data.
+
+**Note:** the backend must have CORS configured to allow requests from `http://localhost:5173` (already set up in `config/settings.py` via `django-cors-headers`). If you change the frontend's port or run it from a different host, update `CORS_ALLOWED_ORIGINS` in `config/settings.py` to match.
+
 ## API Overview
 
 All endpoints require JWT authentication (`Authorization: Bearer <token>`) and are restricted to their intended persona.
@@ -80,6 +103,7 @@ All endpoints require JWT authentication (`Authorization: Bearer <token>`) and a
 | Dispatcher | `/api/dispatcher/deliveries/` |
 | Rider | `/api/rider/deliveries/` |
 | Rider lookup (Dispatcher-only) | `/api/users/?role=rider` |
+| Current user | `/api/users/me/` |
 
 Get a token:
 ```
@@ -104,6 +128,11 @@ Details: [`docs/reflex-design.md` — Act IV](docs/reflex-design.md)
 - [State Machine](diagrams/state-machine/state-machine.md)
 - [Design Flow / Sequence](diagrams/workflows/design-flow.md)
 
+## Known Limitations
+
+- QR delivery confirmation currently uses a text-input prompt for the confirmation code rather than a live camera scanner. The backend validation (correct code, one-time use) is fully functional; only the scanning mechanism itself is a placeholder pending a real barcode/QR scanning library.
+- The Dispatcher's delivery list currently displays the assigned rider by ID (e.g. "Rider #3") rather than by name, since the delivery endpoint does not yet return the rider's username.
+
 ## Team
 
 | Name | Role |
@@ -115,3 +144,4 @@ Details: [`docs/reflex-design.md` — Act IV](docs/reflex-design.md)
 ## License
 
 Educational project — PLP 1MILL Devs Software Engineering Programme, 2026.
+
