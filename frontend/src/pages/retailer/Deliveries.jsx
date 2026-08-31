@@ -6,6 +6,7 @@ import { getDeliveries } from "../../services/deliveries";
 function Deliveries() {
   const [filter, setFilter] = useState("all");
   const [deliveries, setDeliveries] = useState([]);
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     getDeliveries().then(setDeliveries);
@@ -69,38 +70,74 @@ function Deliveries() {
               </p>
             </div>
           ) : (
-            filteredDeliveries.map((delivery) => (
-              <div
-                key={delivery.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        #{delivery.id}
-                      </span>
+            filteredDeliveries.map((delivery) => {
+              const isExpanded = expandedId === delivery.id;
 
-                      <StatusBadge status={delivery.status} />
+              return (
+                <div
+                  key={delivery.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                          #{delivery.id}
+                        </span>
+
+                        <StatusBadge status={delivery.status} />
+                      </div>
+
+                      <h3 className="mt-2 text-lg font-semibold text-slate-900">
+                        {delivery.customer_name}
+                      </h3>
+
+                      <div className="mt-3 grid gap-2 text-sm text-slate-500 sm:grid-cols-3">
+                        <span>{delivery.customer_phone}</span>
+                        <span>{delivery.customer_address}</span>
+                        <span>{delivery.item_description}</span>
+                      </div>
                     </div>
 
-                    <h3 className="mt-2 text-lg font-semibold text-slate-900">
-                      {delivery.customer_name}
-                    </h3>
-
-                    <div className="mt-3 grid gap-2 text-sm text-slate-500 sm:grid-cols-3">
-                      <span>{delivery.customer_phone}</span>
-                      <span>{delivery.customer_address}</span>
-                      <span>{delivery.item_description}</span>
-                    </div>
+                    <button
+                      onClick={() =>
+                        setExpandedId(isExpanded ? null : delivery.id)
+                      }
+                      className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      {isExpanded ? "Hide Details" : "View Details"}
+                    </button>
                   </div>
 
-                  <button className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                    View Details
-                  </button>
+                  {isExpanded && (
+                    <div className="mt-5 border-t border-slate-100 pt-5">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                            Confirmation code
+                          </p>
+                          <p className="mt-1 font-mono text-lg font-semibold text-slate-900">
+                            {delivery.confirmation_code}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-400">
+                            Share this with your rider to confirm delivery.
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                            Rider
+                          </p>
+                          <p className="mt-1 text-slate-700">
+                            {delivery.rider ?? "Not yet assigned"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
